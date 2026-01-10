@@ -49,7 +49,7 @@ docker compose up --build
 -   **Frontend**: http://localhost:8080
 -   **Backend Docs**: http://localhost:8000/docs
 
-## 🧪 Testing
+## Testing
 
 ### Frontend Tests (Vitest)
 ```bash
@@ -68,7 +68,7 @@ python -m uv run pytest test_main.py
 python -m uv run pytest tests_integration/test_workflow.py
 ```
 
-## ☁️ Deployment & CI/CD
+## Deployment & CI/CD
 
 The application is configured for a **Unified Build** (single container) for cloud platforms like Render.
 
@@ -78,5 +78,5 @@ The application is configured for a **Unified Build** (single container) for clo
     3.  Automated Deployment to Render (if tests pass).
 -   **Proof of Deployment**: Refer to [DEPLOYMENT.md](file:///c:/Users/amfua/Documents/GitHub/run_ai/run-with-ai/DEPLOYMENT.md) for configuration details.
 
-## 📜 API Contract
+##  API Contract
 The full API specification can be found in [openapi.yaml](file:///c:/Users/amfua/Documents/GitHub/run_ai/run-with-ai/openapi.yaml). This contract drives both the Pydantic models in the backend and the TypeScript interfaces in the frontend.
