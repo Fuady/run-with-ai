@@ -1,0 +1,13 @@
+__pycache__
+*.pyc
+.venv
+.git
+.gitignore
+.env
+Dockerfile
+test_integration.db
+test_main.db
+test.db
+integration_test_output.txt
+test_output.txt
+all_tests_output.txt
