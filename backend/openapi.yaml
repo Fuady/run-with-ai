@@ -1,0 +1,570 @@
+openapi: 3.0.0
+info:
+  title: RunAI API
+  version: 1.0.0
+  description: API for the RunAI application, supporting training plans, workouts, and social features.
+servers:
+  - url: /api
+paths:
+  /auth/login:
+    post:
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /auth/register:
+    post:
+      summary: Register user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+                name: { type: string }
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /profile/{userId}:
+    get:
+      summary: Get user profile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    patch:
+      summary: Update user profile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfile'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /profile/{userId}/onboarding:
+    post:
+      summary: Complete onboarding
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfile'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /stress:
+    post:
+      summary: Log stress level
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StressEntry'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StressEntry'
+
+  /stress/history/{userId}:
+    get:
+      summary: Get stress history
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: days
+          in: query
+          schema: { type: integer, default: 7 }
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StressEntry'
+
+  /training-plans/{userId}:
+    get:
+      summary: Get user's active training plan
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingPlan'
+
+  /training-plans/generate:
+    post:
+      summary: Generate a new training plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId: { type: string }
+                goal: { type: string, enum: [5K, 10K, Half Marathon, Marathon] }
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingPlan'
+
+  /training-plans/{planId}/adjust:
+    patch:
+      summary: Adjust plan for stress
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stressLevel: { type: integer, minimum: 1, maximum: 5 }
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingPlan'
+
+  /workouts/today/{userId}:
+    get:
+      summary: Get today's workout for user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workout'
+
+  /workouts/{workoutId}/complete:
+    post:
+      summary: Complete a workout
+      parameters:
+        - name: workoutId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                distance: { type: number }
+                duration: { type: number }
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workout'
+
+  /workouts:
+    get:
+      summary: Get workout library
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workout'
+
+  /strength-routines:
+    get:
+      summary: Get strength routines
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StrengthRoutine'
+
+  /nutrition-tips:
+    get:
+      summary: Get nutrition tips
+      parameters:
+        - name: category
+          in: query
+          schema: { type: string }
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NutritionTip'
+
+  /challenges:
+    get:
+      summary: Get active challenges
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Challenge'
+
+  /challenges/{challengeId}/join:
+    post:
+      summary: Join a challenge
+      parameters:
+        - name: challengeId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId: { type: string }
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Challenge'
+
+  /leaderboard:
+    get:
+      summary: Get leaderboard
+      parameters:
+        - name: type
+          in: query
+          schema: { type: string, enum: [weekly, monthly, allTime] }
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaderboardEntry'
+
+  /coach/message:
+    get:
+      summary: Get AI coach message
+      parameters:
+        - name: workoutCompleted
+          in: query
+          schema: { type: boolean }
+        - name: stressLevel
+          in: query
+          schema: { type: integer }
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoachMessage'
+
+  /progress/stats/{userId}:
+    get:
+      summary: Get progress stats for user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  weeklyMileage: { type: number }
+                  monthlyMileage: { type: number }
+                  totalRuns: { type: integer }
+                  averagePace: { type: string }
+                  streak: { type: integer }
+                  weeklyData:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        day: { type: string }
+                        distance: { type: number }
+
+  /subscription/upgrade:
+    post:
+      summary: Upgrade to premium
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId: { type: string }
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+components:
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        user: { $ref: '#/components/schemas/User' }
+        token: { type: string }
+
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string }
+        name: { type: string }
+        avatar: { type: string }
+        profile: { $ref: '#/components/schemas/UserProfile' }
+        subscription: { type: string, enum: [free, premium] }
+        createdAt: { type: string }
+
+    UserProfile:
+      type: object
+      properties:
+        age: { type: integer }
+        height: { type: number }
+        weight: { type: number }
+        experienceLevel: { type: string, enum: [beginner, intermediate, advanced] }
+        weeklyMileage: { type: number }
+        availableTrainingDays: { type: array, items: { type: integer } }
+        injuryHistory: { type: string }
+        prs:
+          type: object
+          properties:
+            fiveK: { type: number }
+            tenK: { type: number }
+            halfMarathon: { type: number }
+            marathon: { type: number }
+        raceGoal:
+          type: object
+          properties:
+            distance: { type: string, enum: [5K, 10K, Half Marathon, Marathon] }
+            targetDate: { type: string }
+            targetTime: { type: number }
+
+    StressEntry:
+      type: object
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        date: { type: string }
+        level: { type: integer, minimum: 1, maximum: 5 }
+        sleepQuality: { type: integer, minimum: 1, maximum: 5 }
+        notes: { type: string }
+
+    Workout:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [easy, tempo, interval, long, recovery, race] }
+        title: { type: string }
+        description: { type: string }
+        duration: { type: number }
+        distance: { type: number }
+        targetPace: { type: string }
+        intervals:
+          type: array
+          items:
+            type: object
+            properties:
+              distance: { type: number }
+              pace: { type: string }
+              rest: { type: string }
+        completed: { type: boolean }
+        completedAt: { type: string }
+        actualDistance: { type: number }
+        actualDuration: { type: number }
+
+    TrainingPlan:
+      type: object
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        name: { type: string }
+        goal: { type: string, enum: [5K, 10K, Half Marathon, Marathon] }
+        startDate: { type: string }
+        endDate: { type: string }
+        weeks:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrainingWeek'
+
+    TrainingWeek:
+      type: object
+      properties:
+        weekNumber: { type: integer }
+        focus: { type: string }
+        workouts:
+          type: array
+          items:
+            type: object
+            properties:
+              dayOfWeek: { type: integer }
+              workout: { $ref: '#/components/schemas/Workout' }
+        totalMileage: { type: number }
+
+    Challenge:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        type: { type: string, enum: [distance, streak, time] }
+        target: { type: number }
+        unit: { type: string }
+        startDate: { type: string }
+        endDate: { type: string }
+        participants: { type: integer }
+        userProgress: { type: number }
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank: { type: integer }
+        userId: { type: string }
+        userName: { type: string }
+        avatar: { type: string }
+        value: { type: number }
+        unit: { type: string }
+
+    NutritionTip:
+      type: object
+      properties:
+        id: { type: string }
+        category: { type: string, enum: [pre-run, post-run, race-day, hydration] }
+        title: { type: string }
+        content: { type: string }
+        timing: { type: string }
+
+    StrengthRoutine:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        duration: { type: number }
+        difficulty: { type: string, enum: [easy, medium, hard] }
+        exercises:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              reps: { type: integer }
+              sets: { type: integer }
+              description: { type: string }
+        targetAreas: { type: array, items: { type: string } }
+
+    CoachMessage:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [motivation, tip, feedback, warning] }
+        content: { type: string }
+        createdAt: { type: string }
