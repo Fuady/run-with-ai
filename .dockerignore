@@ -1,0 +1,16 @@
+.git
+.gitignore
+node_modules
+**/__pycache__
+**/.venv
+**/dist
+**/*.db
+docker-compose.yml
+.gemini
+.agent
+brain
+task.md
+walkthrough.md
+implementation_plan.md
+frontend/node_modules
+backend/.venv

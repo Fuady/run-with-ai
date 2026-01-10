@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Body, Depends
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -338,3 +339,12 @@ async def upgrade_subscription(userId: str = Body(..., embed=True), db: AsyncSes
     result = await db.execute(select(DBUser).where(DBUser.id == userId).outerjoin(DBUser.profile))
     user = result.scalars().first()
     return user_db_to_pydantic(user)
+
+# Serve static files
+# This should be at the end to avoid catching API routes
+import os
+static_dir = os.path.join(os.path.dirname(__file__), ".." , "frontend", "dist")
+if os.path.exists(static_dir):
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
+else:
+    print(f"Warning: Static directory {static_dir} not found.")
