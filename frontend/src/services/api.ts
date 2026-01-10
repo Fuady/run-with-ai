@@ -1,7 +1,5 @@
-// Centralized API service layer with mock data
-// All backend calls are mocked until real backend is implemented
-
-import { mockUsers, mockTrainingPlans, mockWorkouts, mockChallenges, mockLeaderboard, mockNutritionTips, mockStrengthRoutines } from './mockData';
+// Centralized API service layer
+// All backend calls are now implemented using fetch
 
 // Types
 export interface User {
@@ -122,186 +120,146 @@ export interface CoachMessage {
   createdAt: string;
 }
 
-// Simulated API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 // API Client
 class ApiClient {
-  private baseUrl = '/api'; // Will be replaced with actual backend URL
+  private baseUrl = '/api';
+
+  private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'An error occurred' }));
+      throw new Error(error.detail || 'An error occurred');
+    }
+
+    return response.json();
+  }
 
   // Auth
   async login(email: string, password: string): Promise<{ user: User; token: string }> {
-    await delay(500);
-    const user = mockUsers.find(u => u.email === email);
-    if (!user) throw new Error('Invalid credentials');
-    return { user, token: 'mock-jwt-token' };
+    return this.request<{ user: User; token: string }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
   }
 
   async register(data: { email: string; password: string; name: string }): Promise<{ user: User; token: string }> {
-    await delay(500);
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      email: data.email,
-      name: data.name,
-      profile: {
-        age: 30,
-        height: 175,
-        weight: 70,
-        experienceLevel: 'beginner',
-        weeklyMileage: 0,
-        availableTrainingDays: [1, 3, 5],
-        prs: {},
-      },
-      subscription: 'free',
-      createdAt: new Date().toISOString(),
-    };
-    return { user: newUser, token: 'mock-jwt-token' };
+    return this.request<{ user: User; token: string }>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   async logout(): Promise<void> {
-    await delay(200);
+    // Session is handled client-side in this mock/initial setup
+    return;
   }
 
   // User Profile
   async getProfile(userId: string): Promise<User> {
-    await delay(300);
-    const user = mockUsers.find(u => u.id === userId);
-    if (!user) throw new Error('User not found');
-    return user;
+    return this.request<User>(`/profile/${userId}`);
   }
 
   async updateProfile(userId: string, data: Partial<UserProfile>): Promise<User> {
-    await delay(400);
-    const user = mockUsers.find(u => u.id === userId);
-    if (!user) throw new Error('User not found');
-    return { ...user, profile: { ...user.profile, ...data } };
+    return this.request<User>(`/profile/${userId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
   }
 
   async completeOnboarding(userId: string, data: UserProfile): Promise<User> {
-    await delay(500);
-    const user = mockUsers.find(u => u.id === userId);
-    if (!user) throw new Error('User not found');
-    return { ...user, profile: data };
+    return this.request<User>(`/profile/${userId}/onboarding`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   // Stress & Readiness
   async logStress(data: Omit<StressEntry, 'id'>): Promise<StressEntry> {
-    await delay(300);
-    return { ...data, id: `stress-${Date.now()}` };
+    return this.request<StressEntry>('/stress', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   async getStressHistory(userId: string, days: number = 7): Promise<StressEntry[]> {
-    await delay(300);
-    // Generate mock stress history
-    const entries: StressEntry[] = [];
-    for (let i = 0; i < days; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      entries.push({
-        id: `stress-${i}`,
-        userId,
-        date: date.toISOString().split('T')[0],
-        level: (Math.floor(Math.random() * 3) + 2) as 1 | 2 | 3 | 4 | 5,
-        sleepQuality: (Math.floor(Math.random() * 3) + 3) as 1 | 2 | 3 | 4 | 5,
-      });
-    }
-    return entries;
+    return this.request<StressEntry[]>(`/stress/history/${userId}?days=${days}`);
   }
 
   // Training Plans
   async getTrainingPlan(userId: string): Promise<TrainingPlan | null> {
-    await delay(400);
-    return mockTrainingPlans.find(p => p.userId === userId) || null;
+    return this.request<TrainingPlan | null>(`/training-plans/${userId}`);
   }
 
   async generateTrainingPlan(userId: string, goal: '5K' | '10K' | 'Half Marathon' | 'Marathon'): Promise<TrainingPlan> {
-    await delay(1000);
-    const plan = mockTrainingPlans.find(p => p.goal === goal);
-    if (!plan) throw new Error('Could not generate plan');
-    return { ...plan, userId, id: `plan-${Date.now()}` };
+    return this.request<TrainingPlan>('/training-plans/generate', {
+      method: 'POST',
+      body: JSON.stringify({ userId, goal }),
+    });
   }
 
   async adjustPlanForStress(planId: string, stressLevel: number): Promise<TrainingPlan> {
-    await delay(500);
-    const plan = mockTrainingPlans[0];
-    // Mock stress adjustment - reduce intensity for high stress
-    if (stressLevel >= 4) {
-      return {
-        ...plan,
-        weeks: plan.weeks.map(w => ({
-          ...w,
-          workouts: w.workouts.map(wo => ({
-            ...wo,
-            workout: { ...wo.workout, type: 'easy' as const, duration: wo.workout.duration * 0.8 },
-          })),
-        })),
-      };
-    }
-    return plan;
+    return this.request<TrainingPlan>(`/training-plans/${planId}/adjust`, {
+      method: 'PATCH',
+      body: JSON.stringify({ stressLevel }),
+    });
   }
 
   // Workouts
   async getTodayWorkout(userId: string): Promise<Workout | null> {
-    await delay(300);
-    return mockWorkouts[Math.floor(Math.random() * mockWorkouts.length)];
+    return this.request<Workout | null>(`/workouts/today/${userId}`);
   }
 
   async completeWorkout(workoutId: string, data: { distance: number; duration: number }): Promise<Workout> {
-    await delay(400);
-    const workout = mockWorkouts.find(w => w.id === workoutId);
-    if (!workout) throw new Error('Workout not found');
-    return { ...workout, completed: true, completedAt: new Date().toISOString(), ...data };
+    return this.request<Workout>(`/workouts/${workoutId}/complete`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   async getWorkoutLibrary(): Promise<Workout[]> {
-    await delay(300);
-    return mockWorkouts;
+    return this.request<Workout[]>('/workouts');
   }
 
   // Strength Routines
   async getStrengthRoutines(): Promise<StrengthRoutine[]> {
-    await delay(300);
-    return mockStrengthRoutines;
+    return this.request<StrengthRoutine[]>('/strength-routines');
   }
 
   // Nutrition
   async getNutritionTips(category?: string): Promise<NutritionTip[]> {
-    await delay(300);
-    if (category) {
-      return mockNutritionTips.filter(t => t.category === category);
-    }
-    return mockNutritionTips;
+    const url = category ? `/nutrition-tips?category=${category}` : '/nutrition-tips';
+    return this.request<NutritionTip[]>(url);
   }
 
   // Community
   async getChallenges(): Promise<Challenge[]> {
-    await delay(400);
-    return mockChallenges;
+    return this.request<Challenge[]>('/challenges');
   }
 
   async joinChallenge(challengeId: string, userId: string): Promise<Challenge> {
-    await delay(300);
-    const challenge = mockChallenges.find(c => c.id === challengeId);
-    if (!challenge) throw new Error('Challenge not found');
-    return { ...challenge, participants: challenge.participants + 1, userProgress: 0 };
+    return this.request<Challenge>(`/challenges/${challengeId}/join`, {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    });
   }
 
   async getLeaderboard(type: 'weekly' | 'monthly' | 'allTime'): Promise<LeaderboardEntry[]> {
-    await delay(300);
-    return mockLeaderboard;
+    return this.request<LeaderboardEntry[]>(`/leaderboard?type=${type}`);
   }
 
   // AI Coach
   async getCoachMessage(context: { workoutCompleted?: boolean; stressLevel?: number }): Promise<CoachMessage> {
-    await delay(500);
-    const messages = [
-      { type: 'motivation' as const, content: "Great job getting out there today! Every run makes you stronger. 💪" },
-      { type: 'tip' as const, content: "Remember to stay hydrated! Aim for 500ml of water in the hour before your run." },
-      { type: 'feedback' as const, content: "Your consistency is paying off. I've noticed your pace improving over the last 2 weeks!" },
-      { type: 'warning' as const, content: "Your stress levels have been high. Consider an extra rest day or light yoga session." },
-    ];
-    const msg = messages[Math.floor(Math.random() * messages.length)];
-    return { ...msg, id: `msg-${Date.now()}`, createdAt: new Date().toISOString() };
+    const params = new URLSearchParams();
+    if (context.workoutCompleted !== undefined) params.append('workoutCompleted', context.workoutCompleted.toString());
+    if (context.stressLevel !== undefined) params.append('stressLevel', context.stressLevel.toString());
+    return this.request<CoachMessage>(`/coach/message?${params.toString()}`);
   }
 
   // Progress & Analytics
@@ -313,31 +271,15 @@ class ApiClient {
     streak: number;
     weeklyData: { day: string; distance: number }[];
   }> {
-    await delay(400);
-    return {
-      weeklyMileage: 32.5,
-      monthlyMileage: 128.3,
-      totalRuns: 47,
-      averagePace: "5:45/km",
-      streak: 12,
-      weeklyData: [
-        { day: 'Mon', distance: 5.2 },
-        { day: 'Tue', distance: 0 },
-        { day: 'Wed', distance: 8.1 },
-        { day: 'Thu', distance: 4.5 },
-        { day: 'Fri', distance: 0 },
-        { day: 'Sat', distance: 12.5 },
-        { day: 'Sun', distance: 6.2 },
-      ],
-    };
+    return this.request<any>(`/progress/stats/${userId}`);
   }
 
   // Subscription
   async upgradeToPremium(userId: string): Promise<User> {
-    await delay(500);
-    const user = mockUsers.find(u => u.id === userId);
-    if (!user) throw new Error('User not found');
-    return { ...user, subscription: 'premium' };
+    return this.request<User>('/subscription/upgrade', {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    });
   }
 }
 

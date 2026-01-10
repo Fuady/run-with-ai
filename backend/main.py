@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Body
+from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from datetime import datetime, timedelta
 import uuid
@@ -12,6 +13,14 @@ from models import (
 from database import db
 
 app = FastAPI(title="RunAI API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Auth
 @app.post("/api/auth/login", response_model=AuthResponse)
