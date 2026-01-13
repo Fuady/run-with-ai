@@ -78,5 +78,5 @@ The application is configured for a **Unified Build** (single container) for clo
     3.  Automated Deployment to Render (if tests pass).
 -   **Proof of Deployment**: Refer to [DEPLOYMENT.md](file:///c:/Users/amfua/Documents/GitHub/run_ai/run-with-ai/DEPLOYMENT.md) for configuration details.
 
-##  API Contract
+## API Contract
 The full API specification can be found in [openapi.yaml](file:///c:/Users/amfua/Documents/GitHub/run_ai/run-with-ai/openapi.yaml). This contract drives both the Pydantic models in the backend and the TypeScript interfaces in the frontend.
