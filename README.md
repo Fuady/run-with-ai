@@ -46,8 +46,8 @@ The architecture is designed for scalability and modern deployment best practice
 ```bash
 docker compose up --build
 ```
--   **Frontend**: http://localhost:8080
--   **Backend Docs**: http://localhost:8000/docs
+-   **Frontend**: http://localhost:8082
+-   **Backend Docs**: http://localhost:8001/docs
 
 ## Testing
 
